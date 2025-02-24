@@ -3,7 +3,7 @@ import { Outlet } from 'react-router-dom'
 
 export const AuthLayout = () => {
   return (
-    <div className="grid min-h-screen grid-cols-2">
+    <div className="grid min-h-screen grid-cols-2 antialiased">
       {/* A cor foreground no shadcnUi é a cor padrão, que por padrão possui um bom contraste com a cor de fundo padrão */}
       {/* O bg-muted é uma variável que representa uma cor definida no shadcui, veja tailwind.config.js */}
       {/* A ideia do shadcn não é usar nome de cores como zinc ou white, mas sim nome de variáveis, pois
@@ -20,7 +20,7 @@ export const AuthLayout = () => {
         </footer>
       </div>
 
-      <div className="flex flex-col items-center justify-center">
+      <div className="relative flex flex-col items-center justify-center">
         <Outlet />
       </div>
     </div>
