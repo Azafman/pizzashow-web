@@ -1,9 +1,11 @@
+import { useMutation } from '@tanstack/react-query'
 import { Helmet } from 'react-helmet-async'
 import { useForm } from 'react-hook-form'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import * as z from 'zod'
 
+import { signIn } from '@/api/sign-in'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -21,14 +23,14 @@ export const SignIn = () => {
     formState: { isSubmitting },
   } = useForm<signInFormSchema>()
 
+  const { mutateAsync: authenticate } = useMutation({
+    mutationFn: signIn,
+  })
+  // mutateAsync is signIn, however, to the use useMutation, we can acess properties as isSucess, isIdle, data, etc... Assim we can managing the request with useQuery, using useMutation function
+
   async function handleSignIn(data: signInFormSchema) {
-    console.log(data)
-
     try {
-      throw new Error()
-
-      await new Promise((resolve) => setTimeout(resolve, 2000))
-
+      await authenticate({ email: data.email })
       toast.success('Enviamos um link de autenticação para seu e-mail.')
       reset()
     } catch {
