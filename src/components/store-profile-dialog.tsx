@@ -1,10 +1,13 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
 
-import { getManagedRestaurant } from '@/api/get-managed-restaurant'
+import {
+  getManagedRestaurant,
+  ManagedRestaurant,
+} from '@/api/get-managed-restaurant'
 import { updateProfile } from '@/api/update-profile'
 
 import { Button } from './ui/button'
@@ -27,6 +30,8 @@ const storeProfileForm = z.object({
 type storeProfileFormSchema = z.infer<typeof storeProfileForm>
 
 export function StoreProfileDialog() {
+  const queryClient = useQueryClient() // um hook para acessar o queryClient (estado global) -> react-query.ts
+
   const { data: managedRestaurant } = useQuery({
     queryKey: ['managed-restaurant'],
     queryFn: getManagedRestaurant,
@@ -49,6 +54,35 @@ export function StoreProfileDialog() {
 
   const { mutateAsync: updateProfileFn } = useMutation({
     mutationFn: updateProfile,
+    onSuccess(_, variables) {
+      const profileCached = queryClient.getQueryData<ManagedRestaurant>([
+        'managed-restaurant',
+      ])
+      // (_) data is the data returned by request (updateProfileFn)
+      // variable is the payload data (dados enviados)
+      // profileCached -> é o dado salvo em cache pela react query em decorrência da query feita em <AccountMenu />
+      // getQueryData<TipagemEsperada>, nos ajuda a verificar os dados que serão retornados
+
+      /* 
+        - About:getQueryData
+        Imperative (non-reactive) way to retrieve data for a QueryKey. Should only be used in callbacks or functions
+         where reading the latest data is necessary, e.g. for optimistic updates.
+
+        Hint: Do not use this function inside a component, because it won't receive updates. Use useQuery to create a QueryObserver 
+        that subscribes to changes.
+      */
+
+      if (profileCached) {
+        queryClient.setQueryData<ManagedRestaurant>(['managed-restaurant'], {
+          ...profileCached,
+          name: variables.name,
+          description: variables.description,
+        })
+        // setQueryData<TipagemEsperada>, limita o tipo de dado que podemos alterar (prevenção à erro)
+        // setQueryData -> update the value of managed-restaurant in HTTP-STATE => result: Todos lugares da aplicação que utilizam essa query
+        // terão seus valores automaticamente atualizados
+      }
+    },
   })
 
   async function handleStoreProfile(data: storeProfileFormSchema) {
