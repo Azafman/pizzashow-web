@@ -22,10 +22,14 @@ export const AccountMenu = () => {
     useQuery({
       queryKey: ['managed-restaurant'],
       queryFn: getManagedRestaurant,
+      staleTime: Infinity,
+      // tempo em que a query ficará obsoleta (porque esse tipo de dado não é alterado com frequência)
     })
   const { data: profile, isLoading: isLoadingProfile } = useQuery({
     queryKey: ['profile'],
     queryFn: getProfile,
+    staleTime: Infinity,
+    // tempo em que a query ficará obsoleta (porque esse tipo de dado não é alterado com frequência)
   })
 
   return (
