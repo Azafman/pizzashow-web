@@ -25,7 +25,7 @@ import { Textarea } from './ui/textarea'
 
 const storeProfileForm = z.object({
   name: z.string().min(3),
-  description: z.string(),
+  description: z.string().nullable(),
 })
 type storeProfileFormSchema = z.infer<typeof storeProfileForm>
 
@@ -51,36 +51,56 @@ export function StoreProfileDialog() {
       description: managedRestaurant?.description ?? '',
     },
   })
+  function updateManagedRestaurantInCache(variables: storeProfileFormSchema) {
+    const profileCached = queryClient.getQueryData<ManagedRestaurant>([
+      'managed-restaurant',
+    ])
+    // (_) data is the data returned by request (updateProfileFn)
+    // variable is the payload data (dados enviados)
+    // profileCached -> é o dado salvo em cache pela react query em decorrência da query feita em <AccountMenu />
+    // getQueryData<TipagemEsperada>, nos ajuda a verificar os dados que serão retornados
+
+    /* 
+      - About:getQueryData
+      Imperative (non-reactive) way to retrieve data for a QueryKey. Should only be used in callbacks or functions
+       where reading the latest data is necessary, e.g. for optimistic updates.
+
+      Hint: Do not use this function inside a component, because it won't receive updates. Use useQuery to create a QueryObserver 
+      that subscribes to changes.
+    */
+
+    if (profileCached) {
+      queryClient.setQueryData<ManagedRestaurant>(['managed-restaurant'], {
+        ...profileCached,
+        name: variables.name,
+        description: variables.description,
+      })
+      // setQueryData<TipagemEsperada>, limita o tipo de dado que podemos alterar (prevenção à erro)
+      // setQueryData -> update the value of managed-restaurant in HTTP-STATE => result: Todos lugares da aplicação que utilizam essa query
+      // terão seus valores automaticamente atualizados
+    }
+    return { profileCached }
+  }
 
   const { mutateAsync: updateProfileFn } = useMutation({
     mutationFn: updateProfile,
-    onSuccess(_, variables) {
-      const profileCached = queryClient.getQueryData<ManagedRestaurant>([
-        'managed-restaurant',
-      ])
-      // (_) data is the data returned by request (updateProfileFn)
-      // variable is the payload data (dados enviados)
-      // profileCached -> é o dado salvo em cache pela react query em decorrência da query feita em <AccountMenu />
-      // getQueryData<TipagemEsperada>, nos ajuda a verificar os dados que serão retornados
+    onMutate({ description, name }) {
+      // { description, name }->is payload
+      // onMutate is dispatched when updateProfileFn Is invoked
+      const { profileCached } = updateManagedRestaurantInCache({
+        name,
+        description,
+      }) // atualiza o http state (renderiza para o usuário)
 
-      /* 
-        - About:getQueryData
-        Imperative (non-reactive) way to retrieve data for a QueryKey. Should only be used in callbacks or functions
-         where reading the latest data is necessary, e.g. for optimistic updates.
-
-        Hint: Do not use this function inside a component, because it won't receive updates. Use useQuery to create a QueryObserver 
-        that subscribes to changes.
-      */
-
-      if (profileCached) {
-        queryClient.setQueryData<ManagedRestaurant>(['managed-restaurant'], {
-          ...profileCached,
-          name: variables.name,
-          description: variables.description,
-        })
-        // setQueryData<TipagemEsperada>, limita o tipo de dado que podemos alterar (prevenção à erro)
-        // setQueryData -> update the value of managed-restaurant in HTTP-STATE => result: Todos lugares da aplicação que utilizam essa query
-        // terão seus valores automaticamente atualizados
+      return {
+        previosProfile: profileCached,
+      }
+    },
+    onError(_, __, context) {
+      // context is the value returned by function onMutate
+      // onError is dispatched when catch the error in onMutate
+      if (context?.previosProfile) {
+        updateManagedRestaurantInCache(context.previosProfile)
       }
     },
   })
