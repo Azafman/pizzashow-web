@@ -13,7 +13,7 @@ if (env.VITE_ENABLE_API_DELAY) {
   api.interceptors.request.use(async (config) => {
     // intercepta cada requisição e faça contéudo dentro da callback
     // adiciona delay de 2 segundos em todas as requisições gerenciadas pelo axios (api)
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+    await new Promise((resolve) => setTimeout(resolve, 1000))
 
     return config
   })

@@ -1,8 +1,10 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { Building, ChevronDown, LogOut } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 import { getManagedRestaurant } from '@/api/get-managed-restaurant'
 import { getProfile } from '@/api/get-profile'
+import { signOut } from '@/api/sign-out'
 
 import { StoreProfileDialog } from './store-profile-dialog'
 import { Button } from './ui/button'
@@ -18,6 +20,8 @@ import {
 import { Skeleton } from './ui/skeleton'
 
 export const AccountMenu = () => {
+  const navigate = useNavigate()
+
   const { data: managedRestaurant, isLoading: isLoadingManagedRestaurant } =
     useQuery({
       queryKey: ['managed-restaurant'],
@@ -30,6 +34,14 @@ export const AccountMenu = () => {
     queryFn: getProfile,
     staleTime: Infinity,
     // tempo em que a query ficará obsoleta (porque esse tipo de dado não é alterado com frequência)
+  })
+  const { mutateAsync: signOutFn, isPending: isSigningOut } = useMutation({
+    mutationFn: signOut, // o back-end apaga o cookie de autenticação no navagador
+    onSuccess() {
+      navigate('/sign-in', {
+        replace: true,
+      })
+    },
   })
 
   return (
@@ -78,10 +90,17 @@ export const AccountMenu = () => {
             </DropdownMenuItem>
           </DialogTrigger>
 
-          <DropdownMenuItem className="text-rose-500 hover:cursor-pointer dark:text-rose-400">
+          <DropdownMenuItem
+            className="text-rose-500 hover:cursor-pointer dark:text-rose-400"
+            onClick={() => signOutFn()}
+            asChild
+            disabled={isSigningOut}
+          >
             {/* dark:text-rose-400 seta a cor quando o tema for dark */}
-            <LogOut className="mr-2 h-4 w-4" />
-            <span>Sair</span>
+            <button className="w-full">
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Sair</span>
+            </button>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
