@@ -1,11 +1,23 @@
 import { ArrowRight, Search, X } from 'lucide-react'
 
+import { OrderStatus } from '@/components/order-status'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogTrigger } from '@/components/ui/dialog'
 import { TableCell, TableRow } from '@/components/ui/table'
 
 import { OrderDetails } from './order-details'
-export const OrderTableRow = () => {
+
+interface OrderProps {
+  order: {
+    orderId: string
+    createdAt: string
+    status: 'pending' | 'canceled' | 'processing' | 'delivering' | 'delivered'
+    customerName: string
+    total: number
+  }
+}
+
+export const OrderTableRow = ({ order }: OrderProps) => {
   return (
     <TableRow>
       <TableCell>
@@ -23,18 +35,21 @@ export const OrderTableRow = () => {
       </TableCell>
 
       <TableCell className="font-mono text-xs font-medium">
-        984984ASDFASDF4
+        {order.orderId}
       </TableCell>
       <TableCell className="text-muted-foreground">há 15 minutos</TableCell>
       <TableCell>
-        <div className="flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-slate-400" />
-          <span className="font-medium text-muted-foreground">Pedente</span>
-        </div>
+        <OrderStatus status={order.status} />
       </TableCell>
-      <TableCell className="font-medium">Mateus Azaf Martins Lima</TableCell>
+      <TableCell className="font-medium">{order.customerName}</TableCell>
 
-      <TableCell className="font-medium">R$ 579,99</TableCell>
+      <TableCell className="font-medium">
+        {order.total.toLocaleString('pt-BR', {
+          style: 'currency',
+          currency: 'BRL',
+        })}
+        {/* transform number in format money PTBR R$ 0,00 */}
+      </TableCell>
       <TableCell>
         <Button variant={'secondary'} size="xs">
           <ArrowRight className="mr-2 h-2 w-3" />
