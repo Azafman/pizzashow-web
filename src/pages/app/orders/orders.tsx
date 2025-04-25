@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Helmet } from 'react-helmet-async'
+import { useSearchParams } from 'react-router-dom'
+import { z } from 'zod'
 
 import { getOrders } from '@/api/get-orders'
 import { Pagination } from '@/components/pagination'
@@ -15,11 +17,39 @@ import { OrderTableFilters } from './order-table-filters'
 import { OrderTableRow } from './order-table-row'
 
 export const Orders = () => {
+  /* Do to this:
+  const pageIndex = z.coerce
+    .number()
+    .transform((page) => page - 1)
+    .parse(searchParams.get('page') ?? '1') 
+  OR: */
+  const converteNumberPageOfEndUsersToPageIndex = z.coerce
+    .number()
+    .transform((numberPage) => numberPage - 1)
+  // converteNumberPageOfEndUsersToPageIndex irá converter em número e subtrair um do parametro page da URL
+  // see documentation coerce: https://zod.dev/?id=coercion-for-primitives
+
+  const [searchParams, setSearchParams] = useSearchParams()
+  const pageIndex = converteNumberPageOfEndUsersToPageIndex.parse(
+    searchParams.get('page') ?? '1',
+  ) // in summary, to endUser will show page=1, however to use to do query will use pageIndex = 0
+
   const { data: result } = useQuery({
-    queryKey: ['orders'],
-    queryFn: getOrders,
+    queryKey: ['orders', pageIndex],
+    queryFn: () => getOrders({ pageIndex }),
   })
-  console.log(result)
+
+  function handlePaginate(pageIndex: number) {
+    setSearchParams((prevState) => {
+      if (pageIndex === 0) {
+        prevState.delete('page')
+      } else {
+        prevState.set('page', (pageIndex + 1).toString())
+      }
+
+      return prevState
+    })
+  }
   return (
     <>
       <Helmet title="Pedidos" />
@@ -58,7 +88,14 @@ export const Orders = () => {
               </TableBody>
             </Table>
           </div>
-          <Pagination perPage={10} totalCount={100} pageIndex={0} />
+          {result && (
+            <Pagination
+              perPage={result.meta.perPage}
+              totalCount={result.meta.totalCount}
+              pageIndex={result.meta.pageIndex}
+              handlePaginate={handlePaginate}
+            />
+          )}
         </div>
       </div>
     </>

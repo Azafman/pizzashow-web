@@ -14,10 +14,14 @@ interface OrdersResponse {
     totalCount: number
   }
 }
-export const getOrders = async () => {
+interface GetOrdersQuery {
+  pageIndex: number
+}
+
+export const getOrders = async ({ pageIndex }: GetOrdersQuery) => {
   const response = await api.get<OrdersResponse>('/orders', {
     params: {
-      pageIndex: 0,
+      pageIndex,
     },
   })
   // essa tipagem foi obtida no backened, é importante tipar...
