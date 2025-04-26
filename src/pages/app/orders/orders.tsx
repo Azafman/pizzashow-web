@@ -34,9 +34,19 @@ export const Orders = () => {
     searchParams.get('page') ?? '1',
   ) // in summary, to endUser will show page=1, however to use to do query will use pageIndex = 0
 
+  const orderId = searchParams.get('orderId') ?? ''
+  const customerName = searchParams.get('customerName') ?? ''
+  const status = searchParams.get('status') ?? 'all'
+
   const { data: result } = useQuery({
-    queryKey: ['orders', pageIndex],
-    queryFn: () => getOrders({ pageIndex }),
+    queryKey: ['orders', pageIndex, orderId, customerName, status],
+    queryFn: () =>
+      getOrders({
+        pageIndex,
+        orderId,
+        customerName,
+        status: status === 'all' ? null : status,
+      }),
   })
 
   function handlePaginate(pageIndex: number) {

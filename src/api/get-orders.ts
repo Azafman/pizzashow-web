@@ -16,12 +16,23 @@ interface OrdersResponse {
 }
 interface GetOrdersQuery {
   pageIndex: number
+  orderId?: string | null
+  customerName?: string | null
+  status?: string | null
 }
 
-export const getOrders = async ({ pageIndex }: GetOrdersQuery) => {
+export const getOrders = async ({
+  pageIndex,
+  orderId,
+  customerName,
+  status,
+}: GetOrdersQuery) => {
   const response = await api.get<OrdersResponse>('/orders', {
     params: {
       pageIndex,
+      orderId,
+      customerName,
+      status,
     },
   })
   // essa tipagem foi obtida no backened, é importante tipar...
