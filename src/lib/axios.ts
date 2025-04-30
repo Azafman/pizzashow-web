@@ -8,7 +8,7 @@ export const api = axios.create({
   // ao setar como true, o frontend passa a enviar os cookies nas requisições feitas (nesse caso ao backend)
 })
 // env.baseURL, só será acessada em caso de a validação em env.ts aprovada
-
+/* 
 if (env.VITE_ENABLE_API_DELAY) {
   api.interceptors.request.use(async (config) => {
     // intercepta cada requisição e faça contéudo dentro da callback
@@ -18,3 +18,4 @@ if (env.VITE_ENABLE_API_DELAY) {
     return config
   })
 }
+ */

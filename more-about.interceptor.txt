@@ -1,0 +1,55 @@
+Abra e analise app.tsx
+Vamos detalhar melhor o que pode dar errado e por que o cleanup com eject no interceptor é importante.
+
+✅ O que está acontecendo no seu useEffect:
+Toda vez que o componente AppLayout monta, você adiciona um interceptor de resposta no Axios:
+
+api.interceptors.response.use(...)
+Esse interceptor fica ativo globalmente no Axios e intercepta todas as respostas de requisições feitas com o api.
+
+------------
+⚠️ O problema:
+Se por algum motivo o componente AppLayout for desmontado e montado novamente, esse useEffect será executado de novo, e um novo interceptor será adicionado.
+
+O problema: os interceptores antigos continuam existindo e serão chamados novamente.
+
+Isso pode levar a:
+
+Redirecionamentos múltiplos (por exemplo, vários navigate('/sign-in') de uma vez).
+
+Lógicas duplicadas sendo executadas.
+
+Vazamento de memória em casos mais complexos.
+-------------
+🧠 Exemplificando:
+Suponha que o usuário navegue para uma rota diferente e volte para o layout, ou que você condicione o layout a alguma lógica (como permissões, por exemplo). Se o componente for desmontado/remontado, o efeito será disparado novamente e outro interceptor será registrado:
+
+// Após 3 montagens:
+api.interceptors.response = [
+  interceptor1,
+  interceptor2,
+  interceptor3,
+]
+
+Então, quando uma resposta com erro 401 chegar, as 3 funções serão executadas, e cada uma tentará chamar navigate('/sign-in'). Isso pode causar:
+
+Erros de navegação,
+
+Redirecionamentos em loop, Logs duplicados.
+-------------
+✅ Como evitar isso:
+Você salva o ID do interceptor quando o adiciona e usa eject para removê-lo no cleanup do useEffect:
+
+useEffect(() => {
+  const interceptor = api.interceptors.response.use( // salva o id
+    (response) => response,
+    (error) => {
+      // lógica...
+    }
+  )
+
+  return () => {
+    api.interceptors.response.eject(interceptor) // remove o interceptor ao desmontar
+  }
+}, [navigate])
+Assim, sempre que o componente for desmontado, o interceptor correspondente é removido, e você não corre o risco de acumular vários interceptores.
