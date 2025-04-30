@@ -1,6 +1,6 @@
 import { api } from '@/lib/axios'
 
-interface OrdersResponse {
+export interface OrdersResponse {
   orders: {
     orderId: string
     createdAt: string

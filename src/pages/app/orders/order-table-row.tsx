@@ -1,8 +1,11 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { ArrowRight, Search, X } from 'lucide-react'
 import { useState } from 'react'
 
+import { cancelOrder } from '@/api/cancel-order'
+import { OrdersResponse } from '@/api/get-orders'
 import { OrderStatus } from '@/components/order-status'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogTrigger } from '@/components/ui/dialog'
@@ -22,6 +25,37 @@ interface OrderProps {
 
 export const OrderTableRow = ({ order }: OrderProps) => {
   const [orderDetailOpened, setOrderDetailOpened] = useState(false)
+  const queryClient = useQueryClient()
+
+  const { mutateAsync: cancelOrderFn } = useMutation({
+    mutationFn: cancelOrder,
+    onSuccess(_, { orderId: payloadOrderId }) {
+      // variable no onSucess são os parametros passados em cancelOrderFn
+
+      const ordersListCache = queryClient.getQueriesData<OrdersResponse>({
+        queryKey: ['orders'],
+      }) // todas as queries feitas com queryKey: 'orders' -> desde queryKey: ['orders'] até ['orders', 1,2,4] por exemplo
+      // se o método utilizado fosse getQueryData somente a queryKey ['orders'] seria retornada
+
+      // atualizo o http state de todas as queryKeys que contém ['orders']
+      // isso tem grande impacto porque na hora de aplicar filtros e listagens, independente dos parametros, o http state terá todos os dados atualizados
+      ordersListCache.forEach(([cacheKey, cacheData]) => {
+        if (cacheData) {
+          queryClient.setQueryData<OrdersResponse>(cacheKey, {
+            ...cacheData, // destructing em cache.meta e cache.orders
+            orders: cacheData.orders.map((cacheOrder) => {
+              // sobrescreve destructing em cache.orders
+              if (cacheOrder.orderId === payloadOrderId) {
+                return { ...cacheOrder, status: 'canceled' }
+              }
+
+              return cacheOrder
+            }),
+          })
+        }
+      })
+    },
+  })
 
   return (
     <TableRow>
@@ -74,7 +108,14 @@ export const OrderTableRow = ({ order }: OrderProps) => {
         </Button>
       </TableCell>
       <TableCell>
-        <Button variant={'ghost'} size={'xs'}>
+        <Button
+          variant={'ghost'}
+          size={'xs'}
+          onClick={() => cancelOrderFn({ orderId: order.orderId })}
+          disabled={
+            !['peding', 'processing'].includes(order.status)
+          } /* só será possível cancelar o pedido quando o status for Pedente e Em preparo */
+        >
           <X className="mr-2 h-2 w-3" />
           Cancelar
         </Button>
