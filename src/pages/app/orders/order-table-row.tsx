@@ -1,4 +1,7 @@
+import { formatDistanceToNow } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 import { ArrowRight, Search, X } from 'lucide-react'
+import { useState } from 'react'
 
 import { OrderStatus } from '@/components/order-status'
 import { Button } from '@/components/ui/button'
@@ -18,26 +21,40 @@ interface OrderProps {
 }
 
 export const OrderTableRow = ({ order }: OrderProps) => {
+  const [orderDetailOpened, setOrderDetailOpened] = useState(false)
+
   return (
     <TableRow>
       <TableCell>
         <Dialog>
           <DialogTrigger asChild>
-            <Button variant="outline" size="xs">
+            <Button
+              variant="outline"
+              size="xs"
+              onClick={() => setOrderDetailOpened(true)}
+            >
               <Search className="h-3 w-3" />
               <span className="sr-only">Detalhes do pedido</span>
               {/* não aparece em tela */}
             </Button>
           </DialogTrigger>
 
-          <OrderDetails />
+          <OrderDetails
+            orderId={order.orderId}
+            orderDetailOpened={orderDetailOpened}
+          />
         </Dialog>
       </TableCell>
 
       <TableCell className="font-mono text-xs font-medium">
         {order.orderId}
       </TableCell>
-      <TableCell className="text-muted-foreground">há 15 minutos</TableCell>
+      <TableCell className="text-muted-foreground">
+        {formatDistanceToNow(order.createdAt, {
+          locale: ptBR,
+          addSuffix: true,
+        })}
+      </TableCell>
       <TableCell>
         <OrderStatus status={order.status} />
       </TableCell>
