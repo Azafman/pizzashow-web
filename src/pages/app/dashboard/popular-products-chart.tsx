@@ -1,20 +1,15 @@
+import { useQuery } from '@tanstack/react-query'
 import { BarChart } from 'lucide-react'
 import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts'
 import colors from 'tailwindcss/colors'
 
+import { getPopularProducts } from '@/api/get-popular-products'
 /* 
 ResponsiveContainer -> permite que o gráfico seja responsivo e tenha seu tamanho alterado conforme a tela for alterado sua dimensão
 LineChart -> é o gráfico do tipo linha
 */
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
-const data = [
-  { product: 'Pepperoni', amount: 13 },
-  { product: 'Mussarela', amount: 8 },
-  { product: 'Marguerita', amount: 40 },
-  { product: '4 Queijos', amount: 8 },
-  { product: 'Fran-bacon', amount: 31 },
-]
 const COLORS = [
   colors.sky['500'],
   colors.amber['500'],
@@ -30,6 +25,7 @@ const generateCustomizedLabelToEachItemPieChart = ({
   outerRadius,
   value,
   index,
+  data,
 }: {
   cx: number
   cy: number
@@ -38,6 +34,7 @@ const generateCustomizedLabelToEachItemPieChart = ({
   outerRadius: number
   value: string
   index: number
+  data: { product: string; amount: number }[]
 }) => {
   const RADIAN = Math.PI / 180
   const radius = 12 + innerRadius + (outerRadius - innerRadius)
@@ -62,7 +59,13 @@ const generateCustomizedLabelToEachItemPieChart = ({
   /* código copiado da internet, mas tem algo parecido na documentação. 
   Veja: https://recharts.org/en-US/examples/PieChartWithCustomizedLabel */
 }
+
 export const PopularProductsChart = () => {
+  const { data: popularProducts } = useQuery({
+    queryKey: ['metrics', 'popular-products'],
+    queryFn: getPopularProducts,
+  })
+
   return (
     <Card className="col-span-3">
       <CardHeader className="pb-8">
@@ -76,52 +79,59 @@ export const PopularProductsChart = () => {
 
       <CardContent>
         {/* Pressuponho que card content assuma a largura máxima do Card */}
-        <ResponsiveContainer width={'100%'} height={240}>
-          <PieChart>
-            <Pie
-              data={data}
-              dataKey={'amount'}
-              nameKey={'product'}
-              cx="50%"
-              cy="50%"
-              outerRadius={84}
-              innerRadius={64}
-              strokeWidth={4}
-              label={generateCustomizedLabelToEachItemPieChart}
-              labelLine={false}
-            >
-              {data.map((_, index) => {
-                return (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={COLORS[index]}
-                    className="stroke-background transition-all hover:opacity-80 dark:stroke-muted"
-                  />
-                  /* fill a cor background de cada célula */
-                  /* className="stroke-background" -> a cor de backgound ou borda (espaçamento gerado pela propriedade strokeWidth) das células */
-                )
-              })}
-              {/* Por padrão todas as células vem iguais (cor de fundo). Para personalizar siga o exemplo acima que segue o da documentação: https://recharts.org/en-US/examples/PieChartWithCustomizedLabel */}
-            </Pie>
-            {/* datakey -> index do dado que será utilizado para montar o gráfico 
+        {popularProducts && (
+          <ResponsiveContainer width={'100%'} height={240}>
+            <PieChart>
+              <Pie
+                data={popularProducts}
+                dataKey={'amount'}
+                nameKey={'product'}
+                cx="50%"
+                cy="50%"
+                outerRadius={84}
+                innerRadius={64}
+                strokeWidth={4}
+                label={({ ...params }) =>
+                  generateCustomizedLabelToEachItemPieChart({
+                    ...params, // we need pass all params default to function invoked
+                    data: popularProducts,
+                  })
+                }
+                labelLine={false}
+              >
+                {popularProducts.map((_, index) => {
+                  return (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={COLORS[index]}
+                      className="stroke-background transition-all hover:opacity-80 dark:stroke-muted"
+                    />
+                    /* fill a cor background de cada célula */
+                    /* className="stroke-background" -> a cor de backgound ou borda (espaçamento gerado pela propriedade strokeWidth) das células */
+                  )
+                })}
+                {/* Por padrão todas as células vem iguais (cor de fundo). Para personalizar siga o exemplo acima que segue o da documentação: https://recharts.org/en-US/examples/PieChartWithCustomizedLabel */}
+              </Pie>
+              {/* datakey -> index do dado que será utilizado para montar o gráfico 
             nameKey -> nome (descrição) do dado que será utilizado para montar o gráfico */}
-            {/* 
+              {/* 
             cx="50%" -> meio que um margin-left (distância em % da esquerda)
             cy="50%" -> meio que um margin-top (distância em % do topo)
             */}
 
-            {/* 
+              {/* 
             Use os seguintes valores para facilitar o entendimento das propriedades em questão
             outerRadius={20}-> até onde o circulo do gráfico será exibido (em % do valor disponível para o circulo)
             innerRadius={0}-> onde a circulo do gráfico começa a ser exibido (a partir do centro do circulo)
             */}
 
-            {/* strokeWidth={8} -> adiciona espaçamento interno entre as fatias da pizza e  entre
+              {/* strokeWidth={8} -> adiciona espaçamento interno entre as fatias da pizza e  entre
             as fatias e o espaço a elas pertencente (outerRadius - innerRadius), numa espécie de padding-top e padding-bottom. */}
 
-            {/* labelline -> linha da célula do gráfico até a descrição */}
-          </PieChart>
-        </ResponsiveContainer>
+              {/* labelline -> linha da célula do gráfico até a descrição */}
+            </PieChart>
+          </ResponsiveContainer>
+        )}
       </CardContent>
     </Card>
   )
